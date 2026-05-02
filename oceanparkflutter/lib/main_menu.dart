@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'game_state.dart';
 import 'game_screen.dart';
 
 class MainMenu extends StatefulWidget {
@@ -98,7 +97,7 @@ class _MainMenuState extends State<MainMenu> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('OCEAN PARK',
+                      const Text('OCEAN PARK',
                           style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -160,7 +159,7 @@ class _MainMenuState extends State<MainMenu> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 10),
-                      Text('EN LÍNEA',
+                      const Text('EN LÍNEA',
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
