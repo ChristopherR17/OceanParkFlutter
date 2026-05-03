@@ -1,20 +1,42 @@
 import 'package:flutter/material.dart';
-import 'main_menu.dart';
+import 'widgets/game_widget.dart';
 
 void main() {
-  runApp(const OceanParkApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const OceanParkSpectatorApp());
 }
 
-class OceanParkApp extends StatelessWidget {
-  const OceanParkApp({super.key});
+class OceanParkSpectatorApp extends StatelessWidget {
+  const OceanParkSpectatorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Ocean Park',
+      title: 'Ocean Park - Espectador',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      home: const MainMenu(),
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.cyanAccent,
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF020208),
+      ),
+      home: const OceanParkLiveScreen(),
+    );
+  }
+}
+
+class OceanParkLiveScreen extends StatelessWidget {
+  const OceanParkLiveScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: SafeArea(
+        child: GameWidget(),
+      ),
     );
   }
 }
