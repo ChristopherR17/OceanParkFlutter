@@ -9,14 +9,15 @@ public class LevelLoader {
     public float offsetX = 0;
     public float offsetY = 0;
 
-    public void load() {
+    public void load(int level) {
         JsonReader reader = new JsonReader();
 
         // 1. Leer la posición real (Player Zone / Layer)
         try {
             // Asegúrate de que la ruta coincida con donde tienes tu game_data.json en la carpeta assets
             JsonValue gameData = reader.parse(Gdx.files.internal("game_data.json"));
-            JsonValue layer = gameData.get("levels").get(0).get("layers").get(0);
+            int levelIndex = level - 1;
+            JsonValue layer = gameData.get("levels").get(levelIndex).get("layers").get(0);
             this.offsetX = layer.getFloat("x", 0);
             this.offsetY = layer.getFloat("y", 0);
             Gdx.app.log("MAPA", "Zona detectada -> Offset X: " + offsetX + ", Y: " + offsetY);
@@ -26,13 +27,23 @@ public class LevelLoader {
 
         // 2. Leer la matriz de tiles
         try {
-            JsonValue mapData = reader.parse(Gdx.files.internal("tilemaps/level_000_layer_000.json"));
+            int levelIndex = level - 1;
+            String levelName = String.format("%03d", levelIndex);
+            JsonValue mapData = reader.parse(Gdx.files.internal("tilemaps/level_" + levelName + "_layer_000.json"));
             JsonValue mapArray = mapData.get("tileMap");
             tileMap = new int[mapArray.size][mapArray.get(0).size];
 
             for (int r = 0; r < mapArray.size; r++) {
                 for (int c = 0; c < mapArray.get(r).size; c++) {
-                    tileMap[r][c] = mapArray.get(r).getInt(c);
+                    //tileMap[r][c] = mapArray.get(r).getInt(c);
+
+                    int tileId = mapArray.get(r).getInt(c);
+
+                    if (level == 2 && tileId == 145) {
+                        tileMap[r][c] = 0; // o el ID del tile de fondo
+                    } else {
+                        tileMap[r][c] = tileId;
+                    }
                 }
             }
         } catch (Exception e) {

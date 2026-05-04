@@ -396,7 +396,8 @@ class OceanGamePainter extends CustomPainter {
       final frame = ((animationValue * 8).floor()) % frames;
 
       final x = assets.worldToCanvasX(player.x);
-      final y = assets.worldToCanvasY(player.y);
+      const playerVisualYOffset = -3.0;
+      final y = assets.worldToCanvasY(player.y) + playerVisualYOffset;
       final src = Rect.fromLTWH(frame * frameW, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
 
@@ -435,24 +436,43 @@ class OceanGamePainter extends CustomPainter {
     final door = state?.door;
     if (door == null) return;
 
-    // En el cliente Java la puerta se dibuja con +72 px respecto a door.y.
     final x = assets.worldToCanvasX(door.x);
-    final y = assets.worldToCanvasY(door.y) + 72.0;
 
     if (door.open) {
       const frameW = 64.0;
       const frameH = 64.0;
+
+      // La puerta abierta mide más que la hitbox.
+      // Alineamos su base con la base de la puerta cerrada.
+      final y = assets.worldToCanvasY(door.y + door.height - frameH);
+
       final frames = math.max(1, assets.doorOpen.width ~/ frameW);
       final frame = ((animationValue * 5).floor()) % frames;
       final src = Rect.fromLTWH(frame * frameW, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
-      canvas.drawImageRect(assets.doorOpen, src, dst, Paint()..filterQuality = FilterQuality.none);
+
+      canvas.drawImageRect(
+        assets.doorOpen,
+        src,
+        dst,
+        Paint()..filterQuality = FilterQuality.none,
+      );
     } else {
       const frameW = 54.0;
       const frameH = 38.0;
+
+      // Sin +72. La coordenada del servidor ya es la posición visual correcta.
+      final y = assets.worldToCanvasY(door.y);
+
       final src = Rect.fromLTWH(0, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
-      canvas.drawImageRect(assets.doorClosed, src, dst, Paint()..filterQuality = FilterQuality.none);
+
+      canvas.drawImageRect(
+        assets.doorClosed,
+        src,
+        dst,
+        Paint()..filterQuality = FilterQuality.none,
+      );
     }
   }
 

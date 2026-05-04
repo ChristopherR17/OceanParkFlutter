@@ -21,17 +21,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/map/tileset_cueva_2.png
-    - assets/sprites/Mushroom Idle.png
-    - assets/sprites/Mushroom Left.png
-    - assets/sprites/Mushroom Right.png
-    - assets/sprites/Door Closed.png
-    - assets/sprites/Door Open.png
-    - assets/sprites/Leaf Key.png
-    - assets/tilemaps/level_000_layer_000.json
+    - assets/map/
+    - assets/sprites/
+    - assets/tilemaps/
     - assets/game_data.json
-
-  fonts:
-    - family: Pixel
-      fonts:
-        - asset: assets/fonts/pixel.ttf

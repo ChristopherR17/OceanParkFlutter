@@ -92,12 +92,15 @@ public class GameScreen implements Screen, IScreen {
         LevelRenderer.render(game.batch, game.tilesetTexture, game.tileMap, MAP_X, MAP_Y);
         dibujarPuerta(worldHeight);
         dibujarLlave(worldHeight);
+        dibujarBoton(worldHeight);
+        dibujarPlataformasMoviles(worldHeight);
         dibujarJugadores(players, worldHeight);
 
         game.batch.end();
 
         // HUD
         dibujarControlesTactiles();
+        dibujarMensajeNivelCompletado();
 
         procesarEntrada();
     }
@@ -167,6 +170,60 @@ public class GameScreen implements Screen, IScreen {
         game.batch.draw(game.leafKeyFrames[frameIdx], kx, ky, 32, 32);
     }
 
+    private void dibujarBoton(float worldHeight) {
+        JsonValue buttonData = ultimoEstado.get("button");
+
+        if (buttonData == null) return;
+
+        float buttonX = buttonData.getFloat("x", 342f);
+        float buttonY = buttonData.getFloat("y", 194f + MAP_Y);
+        float buttonW = buttonData.getFloat("width", 20f);
+        float buttonH = buttonData.getFloat("height", 22f);
+        boolean pressed = buttonData.getBoolean("pressed", false);
+
+        float drawX = buttonX;
+        float drawY = worldHeight - buttonY - buttonH;
+
+        if (pressed) {
+            game.batch.setColor(0.6f, 0.6f, 0.6f, 1f);
+        }
+
+        game.batch.draw(game.buttonFrame, drawX, drawY, buttonW, buttonH);
+        game.batch.setColor(1f, 1f, 1f, 1f);
+    }
+
+    private void dibujarPlataformasMoviles(float worldHeight) {
+        JsonValue platforms = ultimoEstado.get("movingPlatforms");
+        if (platforms == null) return;
+
+        int tileSize = 23;
+        int cols = game.tilesetTexture.getWidth() / tileSize;
+        TextureRegion[][] regions = TextureRegion.split(game.tilesetTexture, tileSize, tileSize);
+
+        for (JsonValue p : platforms) {
+            float x = p.getFloat("x");
+            float y = worldHeight - p.getFloat("y") - p.getFloat("height", tileSize);
+            float w = p.getFloat("width", tileSize);
+            float h = p.getFloat("height", tileSize);
+
+            int tileId = p.getInt("tileId", 145);
+
+            TextureRegion tile = regions[tileId / cols][tileId % cols];
+
+            int tileCount = Math.round(w / tileSize);
+
+            for (int i = 0; i < tileCount; i++) {
+                game.batch.draw(
+                    tile,
+                    x + i * tileSize,
+                    y,
+                    tileSize,
+                    h
+                );
+            }
+        }
+    }
+
     private void dibujarJugadores(JsonValue players, float worldHeight) {
         if (players == null) return;
 
@@ -182,6 +239,76 @@ public class GameScreen implements Screen, IScreen {
 
             game.batch.draw(frames[frameIndex], px, py, 32, 32);
         }
+    }
+
+    private void dibujarMensajeNivelCompletado() {
+        if (ultimoEstado == null) return;
+
+        int level = ultimoEstado.getInt("level", 1);
+        if (level != 2) return;
+
+        JsonValue players = ultimoEstado.get("players");
+        if (players == null || players.size == 0) return;
+
+        boolean todosHanTerminado = true;
+
+        for (JsonValue p : players) {
+            if (!p.getBoolean("hasFinishedLevel", false)) {
+                todosHanTerminado = false;
+                break;
+            }
+        }
+
+        if (!todosHanTerminado) return;
+
+        hudViewport.apply();
+
+        float boxW = 360f;
+        float boxH = 90f;
+        float boxX = (HUD_W - boxW) / 2f;
+        float boxY = (HUD_H - boxH) / 2f;
+
+        shapeRenderer.setProjectionMatrix(hudCamera.combined);
+
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.65f);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0f, 1f, 1f, 1f);
+        shapeRenderer.rect(boxX, boxY, boxW, boxH);
+        shapeRenderer.end();
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+
+        game.batch.setProjectionMatrix(hudCamera.combined);
+        game.batch.begin();
+
+        game.skin.getFont("font").getData().setScale(2.1f);
+        game.skin.getFont("font").setColor(0f, 1f, 1f, 1f);
+        game.skin.getFont("font").draw(
+            game.batch,
+            "NIVEL COMPLETADO",
+            boxX + 45f,
+            boxY + 58f
+        );
+
+        game.skin.getFont("font").getData().setScale(1f);
+        game.skin.getFont("font").setColor(1f, 1f, 1f, 1f);
+        game.skin.getFont("font").draw(
+            game.batch,
+            "¡Buen trabajo!",
+            boxX + 130f,
+            boxY + 28f
+        );
+
+        game.skin.getFont("font").setColor(1f, 1f, 1f, 1f);
+        game.batch.end();
+
+        viewport.apply();
     }
 
     private TextureRegion[] obtenerFramesJugador(JsonValue p) {
@@ -279,8 +406,18 @@ public class GameScreen implements Screen, IScreen {
     public void handleMessage(String message) {
         try {
             JsonValue json = lector.parse(message);
-            if (json.getString("type").equals("STATE")) ultimoEstado = json;
-        } catch (Exception ignored) {}
+            if (json.getString("type").equals("STATE")) {
+                int level = json.getInt("level", 1);
+
+                if (game.currentLevel != level) {
+                    game.currentLevel = level;
+                    game.levelLoader.load(level);
+                    game.tileMap = game.levelLoader.tileMap;
+                    ultimoEstado = null;
+                }
+
+                ultimoEstado = json;
+            }        } catch (Exception ignored) {}
     }
 
     @Override

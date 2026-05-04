@@ -30,15 +30,15 @@
       ],
       "sprites": [
         {
-          "name": "mushroom idle",
+          "name": "mushroom-idle",
           "gameplayData": "",
-          "type": "mushroom idle",
-          "animationId": "anim_1777402430922296",
-          "x": 124,
-          "y": 384,
+          "type": "mushroom-idle",
+          "animationId": "anim_1777411407410805",
+          "x": 107,
+          "y": 385,
           "width": 32,
           "height": 32,
-          "imageFile": "media/mushroom-idle_2.png",
+          "imageFile": "media/mushroom-idle.png",
           "flipX": false,
           "flipY": false,
           "depth": 0.0,
@@ -48,12 +48,27 @@
           "name": "leaf_key",
           "gameplayData": "",
           "type": "leaf_key",
-          "animationId": "anim_1777402531399946",
+          "animationId": "anim_1777411626590899",
           "x": 45,
-          "y": 260,
+          "y": 261,
           "width": 32,
           "height": 32,
           "imageFile": "media/leaf_key.png",
+          "flipX": false,
+          "flipY": false,
+          "depth": 0.0,
+          "groupId": "__main__"
+        },
+        {
+          "name": "Door Closed",
+          "gameplayData": "",
+          "type": "Door Closed",
+          "animationId": "anim_1777466118257655",
+          "x": 260,
+          "y": 379,
+          "width": 54,
+          "height": 38,
+          "imageFile": "media/Door Closed.png",
           "flipX": false,
           "flipY": false,
           "depth": 0.0,
@@ -79,6 +94,99 @@
       "depthSensitivity": 0.08,
       "zonesFile": "zones/level_000_zones.json",
       "pathsFile": "paths/level_000_paths.json"
+    },
+    {
+      "name": "Ocean World 2",
+      "description": "",
+      "gameplayData": "",
+      "layers": [
+        {
+          "name": "COLOR MAPA",
+          "gameplayData": "",
+          "x": 0,
+          "y": 0,
+          "depth": 5.0,
+          "tilesSheetFile": "media/tileset_cueva_2.png",
+          "tilesWidth": 23,
+          "tilesHeight": 23,
+          "visible": true,
+          "groupId": "__main__",
+          "tileMapFile": "tilemaps/level_001_layer_000.json"
+        }
+      ],
+      "layerGroups": [
+        {
+          "id": "__main__",
+          "name": "Main",
+          "collapsed": false
+        }
+      ],
+      "sprites": [
+        {
+          "name": "Door Closed",
+          "gameplayData": "",
+          "type": "Door Closed",
+          "animationId": "anim_1777466118257655",
+          "x": 475,
+          "y": 181,
+          "width": 54,
+          "height": 38,
+          "imageFile": "media/Door Closed.png",
+          "flipX": false,
+          "flipY": false,
+          "depth": 0.0,
+          "groupId": "__main__"
+        },
+        {
+          "name": "Button",
+          "gameplayData": "",
+          "type": "Button",
+          "animationId": "anim_1777905948422700",
+          "x": 342,
+          "y": 194,
+          "width": 20,
+          "height": 22,
+          "imageFile": "media/Button.png",
+          "flipX": false,
+          "flipY": false,
+          "depth": 0.0,
+          "groupId": "__main__"
+        },
+        {
+          "name": "Leaf Key",
+          "gameplayData": "",
+          "type": "Leaf Key",
+          "animationId": "anim_1777411626590899",
+          "x": 414,
+          "y": 99,
+          "width": 32,
+          "height": 32,
+          "imageFile": "media/leaf_key.png",
+          "flipX": false,
+          "flipY": false,
+          "depth": 0.0,
+          "groupId": "__main__"
+        }
+      ],
+      "spriteGroups": [
+        {
+          "id": "__main__",
+          "name": "Main",
+          "collapsed": false
+        }
+      ],
+      "groupId": "__main__",
+      "viewportWidth": 525,
+      "viewportHeight": 325,
+      "viewportX": 0,
+      "viewportY": 0,
+      "viewportAdaptation": "letterbox",
+      "viewportInitialColor": "green",
+      "viewportPreviewColor": "blue",
+      "backgroundColorHex": "#568BB1",
+      "depthSensitivity": 0.08,
+      "zonesFile": "zones/level_001_zones.json",
+      "pathsFile": "paths/level_001_paths.json"
     }
   ],
   "levelGroups": [
@@ -96,11 +204,29 @@
       "tileWidth": 23,
       "tileHeight": 23,
       "selectionColorHex": "#FFCC00",
-      "groupId": "__group_1777402071080875_0"
+      "groupId": "__main__"
+    },
+    {
+      "name": "Door Closed",
+      "fileName": "media/Door Closed.png",
+      "mediaType": "spritesheet",
+      "tileWidth": 54,
+      "tileHeight": 38,
+      "selectionColorHex": "#FFCC00",
+      "groupId": "__main__"
+    },
+    {
+      "name": "BOTON",
+      "fileName": "media/BOTON.png",
+      "mediaType": "spritesheet",
+      "tileWidth": 32,
+      "tileHeight": 36,
+      "selectionColorHex": "#FFCC00",
+      "groupId": "__main__"
     },
     {
       "name": "mushroom-idle",
-      "fileName": "media/mushroom-idle_2.png",
+      "fileName": "media/mushroom-idle.png",
       "mediaType": "spritesheet",
       "tileWidth": 32,
       "tileHeight": 32,
@@ -109,7 +235,7 @@
     },
     {
       "name": "mushroom-left",
-      "fileName": "media/mushroom-left_2.png",
+      "fileName": "media/mushroom-left.png",
       "mediaType": "spritesheet",
       "tileWidth": 32,
       "tileHeight": 32,
@@ -118,7 +244,7 @@
     },
     {
       "name": "mushroom-right",
-      "fileName": "media/mushroom-right_2.png",
+      "fileName": "media/mushroom-right.png",
       "mediaType": "spritesheet",
       "tileWidth": 32,
       "tileHeight": 32,
@@ -133,17 +259,30 @@
       "tileHeight": 32,
       "selectionColorHex": "#FFCC00",
       "groupId": "__main__"
+    },
+    {
+      "name": "Door Open",
+      "fileName": "media/Door Open.png",
+      "mediaType": "spritesheet",
+      "tileWidth": 64,
+      "tileHeight": 64,
+      "selectionColorHex": "#FFCC00",
+      "groupId": "__main__"
+    },
+    {
+      "name": "Button",
+      "fileName": "media/Button.png",
+      "mediaType": "spritesheet",
+      "tileWidth": 20,
+      "tileHeight": 22,
+      "selectionColorHex": "#FFCC00",
+      "groupId": "__main__"
     }
   ],
   "mediaGroups": [
     {
       "id": "__main__",
       "name": "Main",
-      "collapsed": false
-    },
-    {
-      "id": "__group_1777402071080875_0",
-      "name": "Tiles",
       "collapsed": false
     }
   ],
@@ -159,6 +298,10 @@
     {
       "name": "Floor",
       "color": "yellow"
+    },
+    {
+      "name": "Movimiento",
+      "color": "purple"
     }
   ],
   "animationsFile": "animations/animations.json"
