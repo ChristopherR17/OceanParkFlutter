@@ -11,7 +11,6 @@ import '../services/websocket_service.dart';
 
 // Rutas según tu pubspec actual.
 const String kGameDataPath = 'assets/game_data.json';
-const String kTileMapPath = 'assets/tilemaps/level_000_layer_000.json';
 const String kTilesetPath = 'assets/map/tileset_cueva_2.png';
 const String kMushroomIdlePath = 'assets/sprites/Mushroom Idle.png';
 const String kMushroomLeftPath = 'assets/sprites/Mushroom Left.png';
@@ -19,8 +18,10 @@ const String kMushroomRightPath = 'assets/sprites/Mushroom Right.png';
 const String kLeafKeyPath = 'assets/sprites/Leaf Key.png';
 const String kDoorClosedPath = 'assets/sprites/Door Closed.png';
 const String kDoorOpenPath = 'assets/sprites/Door Open.png';
+const String kButtonPath = 'assets/sprites/Button.png';
 
-const double kFallbackLayerX = -75.0;
+// Estos valores deben coincidir con el servidor.
+const double kServerLayerX = -75.0;
 const double kServerLayerY = 673.0;
 const double kFallbackTileSize = 23.0;
 
@@ -35,14 +36,16 @@ class _GameWidgetState extends State<GameWidget> with SingleTickerProviderStateM
   final WebSocketService _ws = WebSocketService();
   final TransformationController _transformController = TransformationController();
   late final AnimationController _animation;
-  Future<OceanAssets>? _assetsFuture;
+
+  final Map<int, Future<OceanAssets>> _assetsByLevel = {};
   Size? _lastViewportSize;
+  int? _lastCenteredLevel;
 
   @override
   void initState() {
     super.initState();
     _animation = AnimationController(vsync: this, duration: const Duration(seconds: 1))..repeat();
-    _assetsFuture = OceanAssets.load();
+    _assetsByLevel[1] = OceanAssets.load(1);
     _ws.addListener(_onStateChanged);
     _ws.connect();
   }
@@ -62,8 +65,12 @@ class _GameWidgetState extends State<GameWidget> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final state = _ws.latestState;
+    final level = state?.level ?? 1;
+    final assetsFuture = _assetsByLevel.putIfAbsent(level, () => OceanAssets.load(level));
+
     return FutureBuilder<OceanAssets>(
-      future: _assetsFuture,
+      future: assetsFuture,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _ErrorView(message: 'Error cargando assets: ${snapshot.error}');
@@ -73,7 +80,6 @@ class _GameWidgetState extends State<GameWidget> with SingleTickerProviderStateM
         }
 
         final assets = snapshot.data!;
-        final state = _ws.latestState;
 
         return Column(
           children: [
@@ -121,8 +127,9 @@ class _GameWidgetState extends State<GameWidget> with SingleTickerProviderStateM
   }
 
   void _applyInitialCenteredTransform(OceanAssets assets, Size viewportSize) {
-    if (_lastViewportSize == viewportSize) return;
+    if (_lastViewportSize == viewportSize && _lastCenteredLevel == assets.level) return;
     _lastViewportSize = viewportSize;
+    _lastCenteredLevel = assets.level;
 
     final scale = math.min(
       viewportSize.width / assets.mapWidth,
@@ -198,6 +205,7 @@ class _ErrorView extends StatelessWidget {
 
 class OceanAssets {
   OceanAssets({
+    required this.level,
     required this.tileMap,
     required this.tileset,
     required this.mushroomIdle,
@@ -206,6 +214,7 @@ class OceanAssets {
     required this.leafKey,
     required this.doorClosed,
     required this.doorOpen,
+    required this.button,
     required this.layerX,
     required this.layerY,
     required this.tileSize,
@@ -215,6 +224,7 @@ class OceanAssets {
     required this.maxRow,
   });
 
+  final int level;
   final List<List<int>> tileMap;
   final ui.Image tileset;
   final ui.Image mushroomIdle;
@@ -223,6 +233,7 @@ class OceanAssets {
   final ui.Image leafKey;
   final ui.Image doorClosed;
   final ui.Image doorOpen;
+  final ui.Image button;
   final double layerX;
   final double layerY;
   final double tileSize;
@@ -236,28 +247,27 @@ class OceanAssets {
 
   double worldToCanvasX(double worldX) => worldX - (layerX + minCol * tileSize);
 
-  // El servidor usa coordenadas Y-down y suma 673. Flutter también pinta Y-down,
-  // así que NO hay que invertir Y. Solo quitamos el offset del servidor y el recorte superior.
+  // El servidor usa coordenadas Y-down y suma 673. Flutter también pinta Y-down.
+  // Por eso NO invertimos Y; solo quitamos el offset del servidor y el recorte superior.
   double worldToCanvasY(double worldY) => worldY - layerY - minRow * tileSize;
 
-  static Future<OceanAssets> load() async {
-    var layerX = kFallbackLayerX;
-    var layerY = kServerLayerY;
+  static Future<OceanAssets> load(int level) async {
     var tileSize = kFallbackTileSize;
 
     try {
       final gameData = jsonDecode(await rootBundle.loadString(kGameDataPath)) as Map<String, dynamic>;
-      final level = (gameData['levels'] as List<dynamic>).first as Map<String, dynamic>;
-      final layer = (level['layers'] as List<dynamic>).first as Map<String, dynamic>;
-      layerX = (layer['x'] as num? ?? kFallbackLayerX).toDouble();
+      final levels = gameData['levels'] as List<dynamic>;
+      final index = (level - 1).clamp(0, levels.length - 1).toInt();
+      final levelData = levels[index] as Map<String, dynamic>;
+      final layer = (levelData['layers'] as List<dynamic>).first as Map<String, dynamic>;
       tileSize = (layer['tilesWidth'] as num? ?? kFallbackTileSize).toDouble();
-      // Mantener 673 porque el servidor guarda objetos como y + 673.
-      layerY = kServerLayerY;
     } catch (_) {
       // Usar constantes fallback.
     }
 
-    final mapJson = jsonDecode(await rootBundle.loadString(kTileMapPath)) as Map<String, dynamic>;
+    final levelIndex = (level - 1).clamp(0, 999).toInt();
+    final tileMapPath = 'assets/tilemaps/level_${levelIndex.toString().padLeft(3, '0')}_layer_000.json';
+    final mapJson = jsonDecode(await rootBundle.loadString(tileMapPath)) as Map<String, dynamic>;
     final rawMap = mapJson['tileMap'] as List<dynamic>;
     final tileMap = rawMap
         .map((row) => (row as List<dynamic>).map((value) => (value as num).toInt()).toList())
@@ -294,9 +304,11 @@ class OceanAssets {
       _loadImage(kLeafKeyPath),
       _loadImage(kDoorClosedPath),
       _loadImage(kDoorOpenPath),
+      _loadImage(kButtonPath),
     ]);
 
     return OceanAssets(
+      level: level,
       tileMap: tileMap,
       tileset: loaded[0],
       mushroomIdle: loaded[1],
@@ -305,8 +317,9 @@ class OceanAssets {
       leafKey: loaded[4],
       doorClosed: loaded[5],
       doorOpen: loaded[6],
-      layerX: layerX,
-      layerY: layerY,
+      button: loaded[7],
+      layerX: kServerLayerX,
+      layerY: kServerLayerY,
       tileSize: tileSize,
       minCol: minCol,
       maxCol: maxCol,
@@ -340,6 +353,8 @@ class OceanGamePainter extends CustomPainter {
     _drawMap(canvas);
     _drawDoor(canvas);
     _drawLeafKey(canvas);
+    _drawButton(canvas);
+    _drawMovingPlatforms(canvas);
     _drawPlayers(canvas);
 
     if (state == null) {
@@ -361,26 +376,27 @@ class OceanGamePainter extends CustomPainter {
         if (col < 0 || col >= currentRow.length) continue;
         final id = currentRow[col];
         if (id < 0) continue;
+        if (assets.level == 2 && id == 145) continue; // La plataforma móvil se dibuja desde el servidor.
 
-        final srcCol = id % colsInTileset;
-        final srcRow = id ~/ colsInTileset;
-        final src = Rect.fromLTWH(
-          srcCol * assets.tileSize,
-          srcRow * assets.tileSize,
-          assets.tileSize,
-          assets.tileSize,
-        );
-
-        final dst = Rect.fromLTWH(
-          (col - assets.minCol) * assets.tileSize,
-          (row - assets.minRow) * assets.tileSize,
-          assets.tileSize,
-          assets.tileSize,
-        );
-
-        canvas.drawImageRect(assets.tileset, src, dst, paint);
+        _drawTile(canvas, id, (col - assets.minCol) * assets.tileSize, (row - assets.minRow) * assets.tileSize, paint);
       }
     }
+  }
+
+  void _drawTile(Canvas canvas, int tileId, double x, double y, Paint paint, {double? height}) {
+    final colsInTileset = assets.tileset.width ~/ assets.tileSize;
+    if (colsInTileset <= 0 || tileId < 0) return;
+
+    final srcCol = tileId % colsInTileset;
+    final srcRow = tileId ~/ colsInTileset;
+    final src = Rect.fromLTWH(
+      srcCol * assets.tileSize,
+      srcRow * assets.tileSize,
+      assets.tileSize,
+      assets.tileSize,
+    );
+    final dst = Rect.fromLTWH(x, y, assets.tileSize, height ?? assets.tileSize);
+    canvas.drawImageRect(assets.tileset, src, dst, paint);
   }
 
   void _drawPlayers(Canvas canvas) {
@@ -395,9 +411,9 @@ class OceanGamePainter extends CustomPainter {
       final frames = math.max(1, sheet.width ~/ frameW);
       final frame = ((animationValue * 8).floor()) % frames;
 
+      // Sin offset visual: esta era la colocación que encajaba con el Flutter anterior.
       final x = assets.worldToCanvasX(player.x);
-      const playerVisualYOffset = -3.0;
-      final y = assets.worldToCanvasY(player.y) + playerVisualYOffset;
+      final y = assets.worldToCanvasY(player.y);
       final src = Rect.fromLTWH(frame * frameW, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
 
@@ -415,7 +431,7 @@ class OceanGamePainter extends CustomPainter {
 
   void _drawLeafKey(Canvas canvas) {
     final key = state?.leafKey;
-    if (key == null) return;
+    if (key == null || key.picked) return;
 
     const frameW = 32.0;
     const frameH = 32.0;
@@ -438,41 +454,64 @@ class OceanGamePainter extends CustomPainter {
 
     final x = assets.worldToCanvasX(door.x);
 
+    // Mantener +72: es la compensación que hacía coincidir la puerta con el Flutter anterior.
+    final y = assets.worldToCanvasY(door.y) + 72.0;
+
     if (door.open) {
       const frameW = 64.0;
       const frameH = 64.0;
-
-      // La puerta abierta mide más que la hitbox.
-      // Alineamos su base con la base de la puerta cerrada.
-      final y = assets.worldToCanvasY(door.y + door.height - frameH);
-
       final frames = math.max(1, assets.doorOpen.width ~/ frameW);
       final frame = ((animationValue * 5).floor()) % frames;
       final src = Rect.fromLTWH(frame * frameW, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
-
-      canvas.drawImageRect(
-        assets.doorOpen,
-        src,
-        dst,
-        Paint()..filterQuality = FilterQuality.none,
-      );
+      canvas.drawImageRect(assets.doorOpen, src, dst, Paint()..filterQuality = FilterQuality.none);
     } else {
       const frameW = 54.0;
       const frameH = 38.0;
-
-      // Sin +72. La coordenada del servidor ya es la posición visual correcta.
-      final y = assets.worldToCanvasY(door.y);
-
       final src = Rect.fromLTWH(0, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
+      canvas.drawImageRect(assets.doorClosed, src, dst, Paint()..filterQuality = FilterQuality.none);
+    }
+  }
 
-      canvas.drawImageRect(
-        assets.doorClosed,
-        src,
-        dst,
-        Paint()..filterQuality = FilterQuality.none,
-      );
+  void _drawButton(Canvas canvas) {
+    final button = state?.button;
+    if (button == null) return;
+
+    final x = assets.worldToCanvasX(button.x);
+    final y = assets.worldToCanvasY(button.y);
+    final src = Rect.fromLTWH(0, 0, button.width, button.height);
+    final dst = Rect.fromLTWH(x, y, button.width, button.height);
+
+    final paint = Paint()..filterQuality = FilterQuality.none;
+    if (button.pressed) {
+      paint.colorFilter = const ColorFilter.mode(Color(0xAAFFFFFF), BlendMode.modulate);
+    }
+
+    canvas.drawImageRect(assets.button, src, dst, paint);
+  }
+
+  void _drawMovingPlatforms(Canvas canvas) {
+    final platforms = state?.movingPlatforms ?? const <MovingPlatformState>[];
+    if (platforms.isEmpty) return;
+
+    final paint = Paint()..filterQuality = FilterQuality.none;
+
+    for (final platform in platforms) {
+      final x = assets.worldToCanvasX(platform.x);
+      final y = assets.worldToCanvasY(platform.y);
+      final tileCount = math.max(1, (platform.width / assets.tileSize).round());
+
+      for (var i = 0; i < tileCount; i++) {
+        _drawTile(
+          canvas,
+          platform.tileId,
+          x + i * assets.tileSize,
+          y,
+          paint,
+          height: platform.height,
+        );
+      }
     }
   }
 

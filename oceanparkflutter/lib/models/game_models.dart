@@ -105,12 +105,78 @@ class ExitZoneState {
   }
 }
 
+class ButtonState {
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+  final bool pressed;
+
+  const ButtonState({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+    required this.pressed,
+  });
+
+  factory ButtonState.fromJson(Map<String, dynamic> json) {
+    return ButtonState(
+      x: (json['x'] as num? ?? 0).toDouble(),
+      y: (json['y'] as num? ?? 0).toDouble(),
+      width: (json['width'] as num? ?? 20).toDouble(),
+      height: (json['height'] as num? ?? 22).toDouble(),
+      pressed: json['pressed'] as bool? ?? false,
+    );
+  }
+}
+
+class MovingPlatformState {
+  final String name;
+  final int tileId;
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+  final bool active;
+  final bool finished;
+  final int targetIndex;
+
+  const MovingPlatformState({
+    required this.name,
+    required this.tileId,
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+    required this.active,
+    required this.finished,
+    required this.targetIndex,
+  });
+
+  factory MovingPlatformState.fromJson(Map<String, dynamic> json) {
+    return MovingPlatformState(
+      name: json['name']?.toString() ?? '',
+      tileId: (json['tileId'] as num? ?? 145).toInt(),
+      x: (json['x'] as num? ?? 0).toDouble(),
+      y: (json['y'] as num? ?? 0).toDouble(),
+      width: (json['width'] as num? ?? 23).toDouble(),
+      height: (json['height'] as num? ?? 23).toDouble(),
+      active: json['active'] as bool? ?? false,
+      finished: json['finished'] as bool? ?? false,
+      targetIndex: (json['targetIndex'] as num? ?? 0).toInt(),
+    );
+  }
+}
+
 class GameState {
   final int level;
   final List<PlayerState> players;
   final LeafKeyState? leafKey;
   final DoorState? door;
   final ExitZoneState? exitZone;
+  final ButtonState? button;
+  final List<MovingPlatformState> movingPlatforms;
 
   const GameState({
     required this.level,
@@ -118,12 +184,16 @@ class GameState {
     required this.leafKey,
     required this.door,
     required this.exitZone,
+    required this.button,
+    required this.movingPlatforms,
   });
 
   factory GameState.fromJson(Map<String, dynamic> json) {
     final rawPlayers = json['players'] as List<dynamic>? ?? const [];
+    final rawMovingPlatforms = json['movingPlatforms'] as List<dynamic>? ?? const [];
+
     return GameState(
-      level: json['level'] as int? ?? 1,
+      level: (json['level'] as num? ?? 1).toInt(),
       players: rawPlayers
           .whereType<Map>()
           .map((p) => PlayerState.fromJson(Map<String, dynamic>.from(p)))
@@ -137,6 +207,13 @@ class GameState {
       exitZone: json['exitZone'] is Map
           ? ExitZoneState.fromJson(Map<String, dynamic>.from(json['exitZone'] as Map))
           : null,
+      button: json['button'] is Map
+          ? ButtonState.fromJson(Map<String, dynamic>.from(json['button'] as Map))
+          : null,
+      movingPlatforms: rawMovingPlatforms
+          .whereType<Map>()
+          .map((p) => MovingPlatformState.fromJson(Map<String, dynamic>.from(p)))
+          .toList(),
     );
   }
 }
