@@ -417,8 +417,17 @@ class OceanGamePainter extends CustomPainter {
       final src = Rect.fromLTWH(frame * frameW, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
 
-      canvas.drawImageRect(sheet, src, dst, Paint()..filterQuality = FilterQuality.none);
-      _drawName(canvas, player.name, x + frameW / 2, y - 13, _playerColor(i));
+      final playerColor = _playerColor(i);
+
+      final paint = Paint()
+        ..filterQuality = FilterQuality.none
+        ..colorFilter = ColorFilter.mode(
+          playerColor,
+          BlendMode.modulate,
+        );
+
+      canvas.drawImageRect(sheet, src, dst, paint);
+      _drawName(canvas, player.name, x + frameW / 2, y - 13, playerColor);
     }
   }
 
@@ -431,7 +440,7 @@ class OceanGamePainter extends CustomPainter {
 
   void _drawLeafKey(Canvas canvas) {
     final key = state?.leafKey;
-    if (key == null || key.picked) return;
+    if (key == null) return;
 
     const frameW = 32.0;
     const frameH = 32.0;
@@ -445,7 +454,13 @@ class OceanGamePainter extends CustomPainter {
       frameW,
       frameH,
     );
-    canvas.drawImageRect(assets.leafKey, src, dst, Paint()..filterQuality = FilterQuality.none);
+
+    canvas.drawImageRect(
+      assets.leafKey,
+      src,
+      dst,
+      Paint()..filterQuality = FilterQuality.none,
+    );
   }
 
   void _drawDoor(Canvas canvas) {
@@ -468,7 +483,7 @@ class OceanGamePainter extends CustomPainter {
     } else {
       const frameW = 54.0;
       const frameH = 38.0;
-      final src = Rect.fromLTWH(0, 0, frameW, frameH);
+      const src = Rect.fromLTWH(0, 0, frameW, frameH);
       final dst = Rect.fromLTWH(x, y, frameW, frameH);
       canvas.drawImageRect(assets.doorClosed, src, dst, Paint()..filterQuality = FilterQuality.none);
     }
@@ -534,11 +549,12 @@ class OceanGamePainter extends CustomPainter {
 
   Color _playerColor(int index) {
     const colors = [
-      Color(0xFF00FFFF),
-      Color(0xFFFF66CC),
-      Color(0xFF66FF66),
-      Color(0xFFFFCC33),
+      Color.fromRGBO(255, 255, 255, 1),
+      Color.fromRGBO(153, 255, 255, 1),
+      Color.fromRGBO(255, 153, 230, 1),
+      Color.fromRGBO(179, 255, 153, 1),
     ];
+
     return colors[index % colors.length];
   }
 
