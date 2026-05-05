@@ -95,26 +95,34 @@ class _GameWidgetState extends State<GameWidget> with SingleTickerProviderStateM
                   final viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
                   _applyInitialCenteredTransform(assets, viewportSize);
 
+                  final showLevelCompleted = _shouldShowLevelCompleted(state);
+
                   return ClipRect(
-                    child: InteractiveViewer(
-                      constrained: false,
-                      minScale: 0.1,
-                      maxScale: 10,
-                      boundaryMargin: const EdgeInsets.all(600),
-                      transformationController: _transformController,
-                      child: AnimatedBuilder(
-                        animation: _animation,
-                        builder: (_, __) {
-                          return CustomPaint(
-                            size: Size(assets.mapWidth, assets.mapHeight),
-                            painter: OceanGamePainter(
-                              assets: assets,
-                              state: state,
-                              animationValue: _animation.value,
-                            ),
-                          );
-                        },
-                      ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        InteractiveViewer(
+                          constrained: false,
+                          minScale: 0.1,
+                          maxScale: 10,
+                          boundaryMargin: const EdgeInsets.all(600),
+                          transformationController: _transformController,
+                          child: AnimatedBuilder(
+                            animation: _animation,
+                            builder: (_, __) {
+                              return CustomPaint(
+                                size: Size(assets.mapWidth, assets.mapHeight),
+                                painter: OceanGamePainter(
+                                  assets: assets,
+                                  state: state,
+                                  animationValue: _animation.value,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        if (showLevelCompleted) const _LevelCompletedOverlay(),
+                      ],
                     ),
                   );
                 },
@@ -124,6 +132,12 @@ class _GameWidgetState extends State<GameWidget> with SingleTickerProviderStateM
         );
       },
     );
+  }
+
+
+  bool _shouldShowLevelCompleted(GameState? state) {
+    if (state == null || state.level != 2 || state.players.isEmpty) return false;
+    return state.players.every((player) => player.hasFinishedLevel);
   }
 
   void _applyInitialCenteredTransform(OceanAssets assets, Size viewportSize) {
@@ -142,6 +156,53 @@ class _GameWidgetState extends State<GameWidget> with SingleTickerProviderStateM
     _transformController.value = Matrix4.identity()
       ..translate(dx, dy)
       ..scale(scale);
+  }
+}
+
+class _LevelCompletedOverlay extends StatelessWidget {
+  const _LevelCompletedOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Center(
+        child: Container(
+          width: 360,
+          height: 90,
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.65),
+            border: Border.all(color: Colors.cyanAccent),
+          ),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'NIVEL COMPLETADO',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.cyanAccent,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 8)],
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                '¡Gracias por ver!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  shadows: [Shadow(color: Colors.black, blurRadius: 8)],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
