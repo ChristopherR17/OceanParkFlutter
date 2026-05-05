@@ -270,7 +270,17 @@ class OceanAssets {
     final mapJson = jsonDecode(await rootBundle.loadString(tileMapPath)) as Map<String, dynamic>;
     final rawMap = mapJson['tileMap'] as List<dynamic>;
     final tileMap = rawMap
-        .map((row) => (row as List<dynamic>).map((value) => (value as num).toInt()).toList())
+        .map(
+          (row) => (row as List<dynamic>).map((value) {
+            final tileId = (value as num).toInt();
+
+            // En el nivel 2, el tile 145 marca la posicion inicial de la
+            // plataforma movil. La plataforma real llega por el estado del
+            // servidor, pero el hueco del mapa debe pintarse con fondo para
+            // no dejar ver el color de limpieza celeste del canvas.
+            return level == 2 && tileId == 145 ? 0 : tileId;
+          }).toList(),
+        )
         .toList();
 
     var minCol = 1 << 30;
@@ -376,7 +386,6 @@ class OceanGamePainter extends CustomPainter {
         if (col < 0 || col >= currentRow.length) continue;
         final id = currentRow[col];
         if (id < 0) continue;
-        if (assets.level == 2 && id == 145) continue; // La plataforma móvil se dibuja desde el servidor.
 
         _drawTile(canvas, id, (col - assets.minCol) * assets.tileSize, (row - assets.minRow) * assets.tileSize, paint);
       }
